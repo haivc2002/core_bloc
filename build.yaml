@@ -1,0 +1,19 @@
+targets:
+  $default:
+    builders:
+      core_bloc|layout_registry_builder:
+        enabled: true
+
+builders:
+  share_builder:
+    import: "package:core_bloc/builder/share_builder.dart"
+    builder_factories: ["shareBuilder"]
+    build_extensions: {"$lib$": ["shared/feature_access.g.dart", "shared/feature_access_bindings.g.dart"]}
+    auto_apply: root_package
+    build_to: source
+  layout_registry_builder:
+    import: "package:core_bloc/builder/layout_builder.dart"
+    builder_factories: ["layoutRegistryBuilder"]
+    build_extensions: {"$lib$": ["router/layout_registry.g.dart"]}
+    auto_apply: root_package
+    build_to: source

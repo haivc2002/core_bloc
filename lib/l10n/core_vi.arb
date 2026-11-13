@@ -1,0 +1,14 @@
+{
+  "@@locale": "vi",
+  "unknownError": "Đã có lỗi xảy ra!",
+  "close": "Đóng",
+  "success": "Thành công",
+  "failure": "Thất bại",
+  "waiting": "Vui lòng chờ",
+  "notification": "Thông báo",
+  "serverError": "Đã xảy ra lỗi từ máy chủ",
+  "serverBusy": "Hệ thống đang bận",
+  "noServerResponse": "Không nhận được phản hồi từ máy chủ",
+  "networkTimeout": "Kết nối tới máy chủ bị quá hạn",
+  "networkDisconnected": "Không có kết nối mạng, vui lòng kiểm tra lại!"
+}

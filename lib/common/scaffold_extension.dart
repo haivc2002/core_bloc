@@ -1,0 +1,61 @@
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+
+extension ScaffoldModifier on Scaffold {
+  /// Giả lập hàm copyWith cho Scaffold, cho phép thay thế body hoặc các thuộc tính khác
+  Scaffold copyWith({
+    Key? key,
+    PreferredSizeWidget? appBar,
+    Widget? body,
+    Widget? floatingActionButton,
+    FloatingActionButtonLocation? floatingActionButtonLocation,
+    FloatingActionButtonAnimator? floatingActionButtonAnimator,
+    List<Widget>? persistentFooterButtons,
+    AlignmentDirectional? persistentFooterAlignment,
+    Widget? drawer,
+    DrawerCallback? onDrawerChanged,
+    Widget? endDrawer,
+    DrawerCallback? onEndDrawerChanged,
+    Widget? bottomNavigationBar,
+    Widget? bottomSheet,
+    Color? backgroundColor,
+    bool? resizeToAvoidBottomInset,
+    bool? primary,
+    DragStartBehavior? drawerDragStartBehavior,
+    bool? extendBody,
+    bool? extendBodyBehindAppBar,
+    Color? drawerScrimColor,
+    double? drawerEdgeDragWidth,
+    bool? drawerEnableOpenDragGesture,
+    bool? endDrawerEnableOpenDragGesture,
+    String? restorationId,
+  }) {
+    return Scaffold(
+      key: key ?? this.key,
+      appBar: appBar ?? this.appBar,
+      body: body ?? this.body,
+      floatingActionButton: floatingActionButton ?? this.floatingActionButton,
+      floatingActionButtonLocation: floatingActionButtonLocation ?? this.floatingActionButtonLocation,
+      floatingActionButtonAnimator: floatingActionButtonAnimator ?? this.floatingActionButtonAnimator,
+      persistentFooterButtons: persistentFooterButtons ?? this.persistentFooterButtons,
+      persistentFooterAlignment: persistentFooterAlignment ?? this.persistentFooterAlignment,
+      drawer: drawer ?? this.drawer,
+      onDrawerChanged: onDrawerChanged ?? this.onDrawerChanged,
+      endDrawer: endDrawer ?? this.endDrawer,
+      onEndDrawerChanged: onEndDrawerChanged ?? this.onEndDrawerChanged,
+      bottomNavigationBar: bottomNavigationBar ?? this.bottomNavigationBar,
+      bottomSheet: bottomSheet ?? this.bottomSheet,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset ?? this.resizeToAvoidBottomInset,
+      primary: primary ?? this.primary,
+      drawerDragStartBehavior: drawerDragStartBehavior ?? this.drawerDragStartBehavior,
+      extendBody: extendBody ?? this.extendBody,
+      extendBodyBehindAppBar: extendBodyBehindAppBar ?? this.extendBodyBehindAppBar,
+      drawerScrimColor: drawerScrimColor ?? this.drawerScrimColor,
+      drawerEdgeDragWidth: drawerEdgeDragWidth ?? this.drawerEdgeDragWidth,
+      drawerEnableOpenDragGesture: drawerEnableOpenDragGesture ?? this.drawerEnableOpenDragGesture,
+      endDrawerEnableOpenDragGesture: endDrawerEnableOpenDragGesture ?? this.endDrawerEnableOpenDragGesture,
+      restorationId: restorationId ?? this.restorationId,
+    );
+  }
+}

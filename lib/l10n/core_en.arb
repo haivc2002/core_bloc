@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+  "unknownError": "Something went wrong!",
+  "close": "Close",
+  "success": "Success",
+  "failure": "Failure",
+  "waiting": "Please wait",
+  "notification": "Notification",
+  "serverError": "A server error occurred",
+  "serverBusy": "The system is busy",
+  "noServerResponse": "No response received from the server",
+  "networkTimeout": "Connection to the server timed out",
+  "networkDisconnected": "No network connection, please check again!"
+}
