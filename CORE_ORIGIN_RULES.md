@@ -141,7 +141,7 @@ Future<void> onGetUser(
 }
 ```
 
-- Nếu BLoC cần gửi event ngay khi khởi tạo, override `onInitBloc()` và gọi `add` trong `WidgetsBinding.instance.addPostFrameCallback`. `BaseBloc` gọi hook này trong constructor của nó, nên post-frame callback cho phép constructor của BLoC con đăng ký xong handler trước khi gửi event. Gọi `super.onInitBloc()` và kiểm tra `isClosed` trong callback.
+- Dùng `onInitBloc()` cho event khởi tạo độc lập với View. `BaseBloc` gọi hook này trong constructor, nên đặt `add` trong `WidgetsBinding.instance.addPostFrameCallback` để BLoC con đăng ký xong handler. Gọi `super.onInitBloc()` và kiểm tra `isClosed` trong callback. Nếu event cần callback UI, View gửi event từ `initState()` sau `super.initState()`, hoặc từ `onInitArgs()` khi cần tham số route. Nếu callback có thể mở dialog ngay lúc dựng màn hình, gửi event sau frame đầu và kiểm tra `mounted`.
 
 ```dart
 @override
@@ -177,7 +177,7 @@ void onInitBloc() {
 | `enableAutomaticConnectionRecovery: true` | Mặc định là `false`. Khi nhận `Result.isNotConnect`, core chờ kết nối và thử lại một lần. `BaseViewState` hiện snackbar chờ mạng. Chỉ bật cho thao tác có thể chạy lại an toàn. |
 
 - Core gọi `onSuccess` trước khi phát success. Callback của helper có kiểu `void Function`. Nếu việc lưu dữ liệu hoặc điều phối bất đồng bộ phải xong cùng request, đặt nó trong repository, use case hoặc phần được await của `onAction`.
-- `onFailure` thay nhánh hiển thị lỗi mặc định. Dùng khi cần dialog, snackbar hoặc xử lý riêng. Nếu vẫn cần màn hình lỗi, gọi `viewState.add(ViewStateEventFailure(code, message, res))` trong callback. Với tác vụ tự quản lý trạng thái ngoài helper, có thể phát `ViewStateEventLoading()`, `ViewStateEventSuccess()` hoặc `ViewStateEventFailure(...)` trực tiếp.
+- `onFailure` thay nhánh lỗi mặc định. BLoC xử lý lỗi nghiệp vụ và gọi callback của event nếu View cần hiện thông báo. Nếu cần màn hình lỗi, gọi `viewState.add(ViewStateEventFailure(code, message, res))` trong `onFailure`. Với tác vụ tự quản lý trạng thái ngoài helper, có thể phát `ViewStateEventLoading()`, `ViewStateEventSuccess()` hoặc `ViewStateEventFailure(...)` trực tiếp.
 - Override `buildLoadingView()` hoặc `buildFailureView(ViewStateFailure error)` khi màn hình cần cách hiển thị riêng. `enableListenBuilderLoading` và `enableListenBuilderError` áp dụng cho cả view. Giữ vòng đời của các BLoC con khi màn cha đổi trạng thái.
 
 ### Ví dụ phân trang theo ListSample
@@ -271,7 +271,34 @@ WidgetListView.builder(
 ## 7. Dùng widget và helper của core trong view
 
 - Dùng `WidgetAppbar` cho app bar của `Scaffold`, `WidgetListView` hoặc `.builder`/`.separated` cho danh sách và `WidgetWait` cho indicator. Dùng các widget core ở những vị trí chúng đã đáp ứng được hành vi cần thiết.
-- Hiển thị dialog bằng `coreDialog(title: ..., body: ..., actions: ...)` và bottom sheet bằng `coreBottomSheet(title: ..., body: ..., actions: ...)`. Dùng `ButtonAction` ở `actions` khi cần nút. Chọn `successSnackBar`, `errorSnackBar`, `warningSnackBar` hoặc `coreSnackBar` tùy ý nghĩa thông báo. Các helper toàn cục cần `coreNavigatorKey` đã gắn vào app.
+- View sở hữu dialog, bottom sheet và snackbar. Viết nội dung, nút và lời gọi `coreDialog`, `coreBottomSheet`, `successSnackBar`, `warningSnackBar`, `errorSnackBar` hoặc `coreSnackBar` tại View. Dùng `ButtonAction` cho nút trong dialog/sheet. Các helper toàn cục cần `coreNavigatorKey` đã gắn vào app.
+- Nếu UI phản ứng với kết quả nghiệp vụ, View truyền callback có kiểu rõ ràng trong event. BLoC gọi callback từ nhánh `onSuccess` hoặc `onFailure` tương ứng, chỉ truyền dữ liệu cần hiển thị. Giữ `BuildContext`, widget và lời gọi helper UI trong View. Kiểm tra `mounted` trong callback trước khi hiển thị vì request có thể hoàn tất sau khi người dùng rời màn hình. Event mang callback UI dùng nội bộ feature, không gắn `@PublicEvent()`.
 - Với API dùng `LoadingNetworkType.overlay` để core quản lý vòng đời overlay. Với thao tác tự quản lý, gọi `openLoadingOverlay()` trước khi chạy và `closeLoadingOverlay()` trong `finally`, hoặc dùng `runWithLoadingOverlay(() async { ... })`. Future từ `openLoadingOverlay()` hoàn tất khi overlay đóng. Dùng `unawaited(openLoadingOverlay())` nếu cần chạy việc ngay sau khi mở.
 - Viết phần UI nhỏ trực tiếp trong `buildSuccessView()`. Khi một cụm dài, tách thành getter riêng như `Widget get _buildSummary { ... }` ngay trong view state. Getter đọc `context`, `bloc`, `state` có sẵn. Lấy state hiện tại mỗi lần build.
 - Nếu nhiều cụm UI có cùng cấu trúc và chỉ khác dữ liệu hoặc callback, tách thành widget riêng trong một file cùng feature rồi truyền tham số. Chờ quy ước riêng của dự án cho widget dùng chung toàn app.
+
+### Ví dụ chuyển lỗi đăng nhập từ BLoC về View
+
+```dart
+// Event
+final class LoginSampleExampleEvent extends ExampleEvent {
+  const LoginSampleExampleEvent({this.dialog});
+
+  final void Function(String message)? dialog;
+}
+
+// View
+void _submitLogin() {
+  emitEvent(LoginSampleExampleEvent(dialog: (message) {
+    if (!mounted) return;
+    coreDialog(title: 'Đăng nhập thất bại', body: Text(message));
+  }));
+}
+
+// Trong handler của BLoC. Giữ xử lý thành công của feature trong onSuccess.
+await runNetworkCatching<LoginEntity>(
+  onAction: () => _repository.loginSampleApi(),
+  enableListenError: false,
+  onFailure: (_, message, _) => event.dialog?.call(message),
+);
+```
