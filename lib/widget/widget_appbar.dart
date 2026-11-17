@@ -23,6 +23,8 @@ class PullProgressCubit extends Cubit<double> {
 /// Global fallback Cubit for overscroll pull progress when not provided in context.
 final PullProgressCubit pullProgressCubit = PullProgressCubit();
 
+const Object _defaultLeadingTransitionTag = Object();
+
 /// Resolves the effective [PullProgressCubit] from explicit parameter,
 /// context [BlocProvider], or the fallback shared instance.
 PullProgressCubit resolvePullProgressCubit(BuildContext context, [PullProgressCubit? explicit]) {
@@ -46,6 +48,9 @@ class WidgetAppbar extends StatelessWidget implements PreferredSizeWidget {
   final bool automaticallyImplyLeading;
   final PullProgressCubit? pullProgress;
 
+  /// Matches leading widgets across routes. Set to null to disable the flight.
+  final Object? leadingTransitionTag;
+
   const WidgetAppbar({
     super.key,
     this.backgroundColor,
@@ -57,6 +62,7 @@ class WidgetAppbar extends StatelessWidget implements PreferredSizeWidget {
     this.centerTitle,
     this.automaticallyImplyLeading = true,
     this.pullProgress,
+    this.leadingTransitionTag = _defaultLeadingTransitionTag,
   });
 
   @override
@@ -76,12 +82,17 @@ class WidgetAppbar extends StatelessWidget implements PreferredSizeWidget {
 
     if (route != null) {
       if (leadingWidget != null) {
-        leadingWidget = _FixedPosition(
-          animation: route.animation!,
-          secondaryAnimation: route.secondaryAnimation!,
-          enableFadeAndBlur: false,
-          child: leadingWidget,
-        );
+        final tag = leadingTransitionTag;
+        if (tag != null) {
+          leadingWidget = Hero(
+            tag: tag,
+            transitionOnUserGestures: true,
+            createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+            flightShuttleBuilder: _buildLeadingFlight,
+            placeholderBuilder: (_, size, _) => SizedBox.fromSize(size: size),
+            child: leadingWidget,
+          );
+        }
       }
 
       if (titleWidget != null) {
@@ -140,7 +151,14 @@ class WidgetAppbar extends StatelessWidget implements PreferredSizeWidget {
               return _buildAppBar(
                 context,
                 currentToolbarHeight,
-                leadingWidget != null ? Transform.translate(offset: Offset(dx, 0), child: leadingWidget) : null,
+                leadingWidget != null
+                    ? _FixedPosition(
+                        animation: animation,
+                        secondaryAnimation: route!.secondaryAnimation!,
+                        horizontalPaintOffset: dx,
+                        child: leadingWidget,
+                      )
+                    : null,
                 titleWidget,
                 actionWidgets?.map((a) => Transform.translate(offset: Offset(dx, 0), child: a)).toList(),
               );
@@ -158,6 +176,40 @@ class WidgetAppbar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
+  static Widget _buildLeadingFlight(
+    BuildContext context,
+    Animation<double> animation,
+    HeroFlightDirection direction,
+    BuildContext fromContext,
+    BuildContext toContext,
+  ) {
+    final from = (fromContext.widget as Hero).child;
+    final to = (toContext.widget as Hero).child;
+    final incoming = direction == HeroFlightDirection.push
+        ? animation
+        : ReverseAnimation(animation);
+    final fromLeading = InheritedTheme.captureAll(fromContext, from);
+    final toLeading = InheritedTheme.captureAll(toContext, to);
+
+    return IgnorePointer(
+      child: ExcludeSemantics(
+        child: Material(
+          type: MaterialType.transparency,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              FadeTransition(
+                opacity: ReverseAnimation(incoming),
+                child: fromLeading,
+              ),
+              FadeTransition(opacity: incoming, child: toLeading),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   AppBar _buildAppBar(
     BuildContext context,
     double currentToolbarHeight,
@@ -165,6 +217,14 @@ class WidgetAppbar extends StatelessWidget implements PreferredSizeWidget {
     Widget? titleWidget,
     List<Widget>? actionWidgets,
   ) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    // An explicit background prevents Material 3's scrolled-under fallback.
+    final defaultBackground =
+        theme.useMaterial3 || colors.brightness == Brightness.dark
+        ? colors.surface
+        : colors.primary;
+
     return AppBar(
       leading: leadingWidget,
       title: titleWidget,
@@ -175,7 +235,8 @@ class WidgetAppbar extends StatelessWidget implements PreferredSizeWidget {
       leadingWidth: leadingWidth,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
-      backgroundColor: backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor,
+      backgroundColor:
+          backgroundColor ?? AppBarTheme.of(context).backgroundColor ?? defaultBackground,
       toolbarHeight: currentToolbarHeight,
       actions: actionWidgets,
     );
@@ -189,19 +250,22 @@ class _FixedPosition extends SingleChildRenderObjectWidget {
   final Animation<double> animation;
   final Animation<double> secondaryAnimation;
   final bool enableFadeAndBlur;
+  final double horizontalPaintOffset;
 
   const _FixedPosition({
     required super.child,
     required this.animation,
     required this.secondaryAnimation,
     this.enableFadeAndBlur = false,
+    this.horizontalPaintOffset = 0,
   });
 
   @override
   _RenderFixedPosition createRenderObject(BuildContext context) {
     return _RenderFixedPosition(enableFadeAndBlur: enableFadeAndBlur)
       ..animation = animation
-      ..secondaryAnimation = secondaryAnimation;
+      ..secondaryAnimation = secondaryAnimation
+      ..horizontalPaintOffset = horizontalPaintOffset;
   }
 
   @override
@@ -209,6 +273,7 @@ class _FixedPosition extends SingleChildRenderObjectWidget {
     renderObject
       ..animation = animation
       ..secondaryAnimation = secondaryAnimation
+      ..horizontalPaintOffset = horizontalPaintOffset
       ..enableFadeAndBlur = enableFadeAndBlur;
   }
 }
@@ -225,6 +290,13 @@ class _RenderFixedPosition extends RenderProxyBox {
 
   double? _anchorScreenX;
   bool _pendingCapture = false;
+  double _horizontalPaintOffset = 0;
+
+  set horizontalPaintOffset(double value) {
+    if (_horizontalPaintOffset == value) return;
+    _horizontalPaintOffset = value;
+    markNeedsPaint();
+  }
 
   Animation<double>? _animation;
   set animation(Animation<double>? value) {
@@ -276,7 +348,8 @@ class _RenderFixedPosition extends RenderProxyBox {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    final screenX = localToGlobal(Offset.zero).dx;
+    // Keep the route compensation in paint so Hero measures the toolbar slot.
+    final screenX = localToGlobal(Offset.zero).dx + _horizontalPaintOffset;
     
     final bool isSteadyState = (_animation == null || _animation!.isCompleted) &&
                                (_secondaryAnimation == null || _secondaryAnimation!.isDismissed);
@@ -289,9 +362,9 @@ class _RenderFixedPosition extends RenderProxyBox {
       _pendingCapture = false;
     }
 
-    double dx = 0.0;
+    double dx = _horizontalPaintOffset;
     if (!isSteadyState && _anchorScreenX != null) {
-      dx = _anchorScreenX! - screenX;
+      dx += _anchorScreenX! - screenX;
     }
     final double opacity = _enableFadeAndBlur ? _getOpacity() : 1.0;
     final int alpha = (opacity * 255).round();

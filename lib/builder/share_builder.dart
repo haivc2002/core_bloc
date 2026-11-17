@@ -9,8 +9,9 @@ Builder shareBuilder(BuilderOptions options) => ShareApiBuilder();
 
 class ShareApiBuilder implements Builder {
   static const _accessFile = 'feature_access.g.dart';
+  static const _bindingsFile = 'feature_access_bindings.g.dart';
   static const _accessPath = 'shared/$_accessFile';
-  static const _bindingsPath = 'shared/feature_access_bindings.g.dart';
+  static const _bindingsPath = 'shared/$_bindingsFile';
 
   @override
   Map<String, List<String>> get buildExtensions => {
@@ -78,16 +79,17 @@ class ShareApiBuilder implements Builder {
       final library = await step.resolver.libraryFor(asset);
       classes.addAll(library.classes);
     }
-    final names = <String>{'bind', 'unbind'};
+    final names = <String>{'bind', 'unbind', 'initialized'};
     void reserve(String name) {
       if (!RegExp(r'^[a-zA-Z][\w$]*$').hasMatch(name) || !names.add(name)) {
         throw StateError('Invalid or duplicate shared API name: $name');
       }
     }
 
-    final api = StringBuffer(
-      "// GENERATED CODE - DO NOT MODIFY BY HAND\nimport 'package:flutter/foundation.dart';\nimport 'package:core_bloc/share/share.dart';\n\nfinal featAccess = FeatureAccess();\n\nclass FeatureAccess {\n",
-    );
+    final api = StringBuffer()
+      ..writeln('final featAccess = FeatureAccess();')
+      ..writeln('class FeatureAccess {')
+      ..writeln('static void initialized() => _registerFeatureAccess();');
     final bindings = StringBuffer();
     final registrations = <String>[];
     for (final bloc in classes.where(
@@ -207,23 +209,26 @@ class ShareApiBuilder implements Builder {
     final formatter = DartFormatter(
       languageVersion: DartFormatter.latestLanguageVersion,
     );
-    final publicImports = typeImports.entries
-        .map((e) => "import '${e.key}' as ${e.value};")
-        .join('\n');
+    final accessSource = StringBuffer()
+      ..writeln('// GENERATED CODE - DO NOT MODIFY BY HAND')
+      ..writeln("import 'package:flutter/foundation.dart';")
+      ..writeln("import 'package:core_bloc/share/public_registry.dart';")
+      ..writeln("import 'package:core_bloc/share/share.dart';");
+    for (final entry in typeImports.entries) {
+      accessSource.writeln("import '${entry.key}' as ${entry.value};");
+    }
+    for (final directive in imports) {
+      accessSource.writeln(directive);
+    }
+    accessSource
+      ..writeln("part '$_bindingsFile';")
+      ..writeln(api);
     await step.writeAsString(
       AssetId(step.inputId.package, 'lib/$_accessPath'),
-      formatter.format(
-        api
-            .toString()
-            .replaceFirst(
-              "import 'package:flutter/foundation.dart';",
-              "$publicImports\nimport 'package:flutter/foundation.dart';",
-            )
-            .replaceAll(', {}', ''),
-      ),
+      formatter.format(accessSource.toString().replaceAll(', {}', '')),
     );
     final output =
-        "// GENERATED CODE - DO NOT MODIFY BY HAND\nimport 'package:core_bloc/share/public_registry.dart';\nimport '$_accessFile';\n${imports.join('\n')}\nvoid initializeFeatureAccess() { ${registrations.join()} }\n$bindings";
+        "// GENERATED CODE - DO NOT MODIFY BY HAND\npart of '$_accessFile';\nvoid _registerFeatureAccess() { ${registrations.join()} }\n$bindings";
     await step.writeAsString(
       AssetId(step.inputId.package, 'lib/$_bindingsPath'),
       formatter.format(output.replaceAll('(bloc, )', '(bloc)')),

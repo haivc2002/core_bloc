@@ -19,6 +19,8 @@ mixin NetworkCatching {
   /// [enableAutomaticConnectionRecovery] retries a disconnected action once
   /// when the device reports a connection. It waits until then or until the
   /// view state closes. Use it for actions safe to repeat.
+  ///
+  /// [shouldHandleResult] can discard responses from superseded requests.
   Future<void> runNetworkCatching<T>({
     required Future<Result<T>> Function() onAction,
     void Function(T data)? onSuccess,
@@ -26,6 +28,7 @@ mixin NetworkCatching {
     LoadingNetworkType loadingType = LoadingNetworkType.normal,
     bool enableListenError = true,
     bool enableAutomaticConnectionRecovery = false,
+    bool Function()? shouldHandleResult,
   }) async {
     if (viewState.isClosed) return;
     if (loadingType == LoadingNetworkType.normal) {
@@ -51,7 +54,9 @@ mixin NetworkCatching {
           ? await runWithLoadingOverlay(runAction)
           : await runAction();
     } on SessionExpiredException {
-      if (!viewState.isClosed && loadingType == LoadingNetworkType.normal) {
+      if (!viewState.isClosed &&
+          (shouldHandleResult?.call() ?? true) &&
+          loadingType == LoadingNetworkType.normal) {
         viewState.add(
           enableListenError ? ViewStateEventFailure() : ViewStateEventSuccess(),
         );
@@ -59,7 +64,7 @@ mixin NetworkCatching {
       return;
     }
 
-    if (viewState.isClosed) return;
+    if (viewState.isClosed || !(shouldHandleResult?.call() ?? true)) return;
     switch (response) {
       case Success(value: final data):
         onSuccess?.call(data);

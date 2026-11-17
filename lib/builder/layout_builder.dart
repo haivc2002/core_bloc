@@ -78,7 +78,7 @@ class LayoutRegistryBuilder implements Builder {
     buffer.writeln("    return Center(child: Text('Route not found: \$routeName'));");
     buffer.writeln("  }");
     buffer.writeln();
-    buffer.writeln("  static void init() {");
+    buffer.writeln("  static void initialized() {");
     for (var entry in routes.entries) {
       buffer.writeln("    _register(${entry.key}, ${entry.value});");
     }

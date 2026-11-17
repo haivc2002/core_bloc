@@ -11,7 +11,7 @@ import '../common/view_status.dart';
 /// A base abstract class for BLoC that provides common error handling and logging capabilities.
 abstract class BaseBloc<E, S> extends Bloc<E, S> with
     NetworkCatching,
-    Pagination {
+    Pagination<E> {
   BaseBloc(super.initialState) {
     scheduleMicrotask(() {
       if (!_publicClosing && !isClosed) {

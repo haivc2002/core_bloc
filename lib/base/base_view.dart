@@ -36,9 +36,7 @@ abstract class BaseViewState<
   bool get enableListenBuilderLoading   => true;
   bool get enableListenBuilderError     => true;
 
-  bool get viewIsLoading =>
-      bloc.viewState.waitingForConnection.value ||
-      bloc.viewState.state is ViewStateLoading;
+  bool get viewIsLoading => bloc.viewState.state is ViewStateLoading;
   bool get viewIsFailure => bloc.viewState.state is ViewStateFailure;
   bool get viewIsSuccess => bloc.viewState.state is ViewStateSuccess;
 
@@ -98,9 +96,9 @@ abstract class BaseViewState<
 
   Widget buildLoadingView() => const WidgetWait();
 
-  Widget buildFailureView([ViewStateFailure? error]) {
+  Widget buildFailureView(ViewStateFailure error) {
     final defaultMessage = context.coreMessage.unknownError;
-    return Center(child: Text(error?.message ?? defaultMessage));
+    return Center(child: Text(error.message ?? defaultMessage));
   }
 
   Widget buildSuccessView();
@@ -149,23 +147,18 @@ abstract class BaseViewState<
       builder: (context, blocState) {
         state = blocState;
 
-        return ValueListenableBuilder<bool>(
-          valueListenable: bloc.viewState.waitingForConnection,
-          builder: (context, waiting, _) =>
-              BlocBuilder<ViewStateBloc, ViewStatusState>(
-            bloc: bloc.viewState,
-            builder: (context, viewState) {
-              final statusView = switch (viewState) {
-                _ when waiting => buildLoadingView(),
-                ViewStateLoading() when enableListenBuilderLoading =>
-                  buildLoadingView(),
-                ViewStateFailure() when enableListenBuilderError =>
-                  buildFailureView(viewState),
-                _ => null,
-              };
-              return _buildWithStatus(statusView);
-            },
-          ),
+        return BlocBuilder<ViewStateBloc, ViewStatusState>(
+          bloc: bloc.viewState,
+          builder: (context, viewState) {
+            final statusView = switch (viewState) {
+              ViewStateLoading() when enableListenBuilderLoading =>
+                buildLoadingView(),
+              ViewStateFailure() when enableListenBuilderError =>
+                buildFailureView(viewState),
+              _ => null,
+            };
+            return _buildWithStatus(statusView);
+          },
         );
       }
     );

@@ -361,12 +361,16 @@ import 'injection.config.dart';
 
 final getIt = GetIt.instance;
 
+abstract final class Dependencies {
+  static void initialized() => _configureDependencies();
+}
+
 @InjectableInit(
   initializerName: 'init',
   preferRelativeImports: true,
   asExtension: true,
 )
-void configureDependencies() => getIt.init();
+void _configureDependencies() => getIt.init();
 ''';
     diFile.writeAsStringSync(content);
     print('Created: ${diFile.path}');
