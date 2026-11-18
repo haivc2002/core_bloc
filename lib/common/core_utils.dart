@@ -71,21 +71,21 @@ void backToUntil(String routeName) {
   Navigator.popUntil(_currentContext, ModalRoute.withName(routeName));
 }
 
-/// Shows a custom dialog using the core's OverlayDialog widget.
+/// Shows a dialog with a touch highlight and elastic drag feedback.
 Future<void> coreDialog({
-  String title                = "",
-  Widget body                 = const SizedBox(),
-  List<ButtonAction> actions  = const [],
-  bool canPop                 = true,
-  bool disEnableActions       = false
+  String title = '',
+  Widget body = const SizedBox(),
+  List<ButtonAction> actions = const [],
+  bool canPop = true,
+  bool disEnableActions = false,
 }) {
   return showCupertinoDialog(
     context: _currentContext,
     builder: (_) => PopScope(
       canPop: canPop,
       child: OverlayDialog(
-        body: body,
         title: title,
+        body: body,
         actions: actions,
         disEnableActions: disEnableActions,
       ),
@@ -93,7 +93,7 @@ Future<void> coreDialog({
   );
 }
 
-/// Shows a custom bottom sheet.
+/// Shows a bottom sheet with a touch highlight and elastic drag feedback.
 Future<void> coreBottomSheet({
   Widget? body,
   String title = "",
@@ -275,6 +275,7 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> _showSnackBar(
         title,
         textColor: textColor,
         dismissOnTap: !persist,
+        enableTouchFeedback: status != _Status.normal,
       ),
     ),
   );

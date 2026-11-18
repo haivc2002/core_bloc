@@ -1,6 +1,6 @@
 name: core_bloc
 description: "A new Flutter package project."
-version: 0.0.1
+version: 0.0.2
 homepage:
 
 environment:
@@ -39,6 +39,8 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   generate: true
+  shaders:
+    - shaders/touch_surface_light.frag
 
   # To add assets to your package, add an assets section, like this:
   # assets:

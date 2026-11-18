@@ -1,5 +1,6 @@
 import 'package:core_bloc/common/color_opacity.dart';
-import 'package:core_bloc/core_bloc.dart';
+import 'package:core_bloc/common/context_extension.dart';
+import 'package:core_bloc/overlay/touch_reactive_surface.dart';
 import 'package:flutter/material.dart';
 
 class OverlayDialog extends StatelessWidget {
@@ -18,22 +19,11 @@ class OverlayDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = Theme.of(context).brightness == Brightness.light
-        ? Colors.white
-        : const Color(0xFF1E1E1E);
-    final textColor = Theme.of(context).brightness == Brightness.dark
-        ? Colors.white
-        : Colors.black;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
 
-    return Dialog(
-      backgroundColor: backgroundColor,
-      elevation: 0,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20))
-      ),
-      clipBehavior: Clip.antiAlias,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-      child: ConstrainedBox(
+    const borderRadius = BorderRadius.all(Radius.circular(20));
+    final content = ConstrainedBox(
         constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.8,
             maxWidth: 450
@@ -176,6 +166,16 @@ class OverlayDialog extends StatelessWidget {
             ],
           ),
         ),
+    );
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(borderRadius: borderRadius),
+      clipBehavior: Clip.none,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      child: TouchReactiveSurface(
+        borderRadius: borderRadius,
+        child: content,
       ),
     );
   }

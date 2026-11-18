@@ -22,6 +22,10 @@ enum RefreshType {
 class WidgetListView extends StatelessWidget {
   final ScrollController? controller;
   final ScrollPhysics? physics;
+
+  /// Defaults to fitting the content inside a dialog.
+  final bool? shrinkWrap;
+
   final List<Widget>? children;
   final IndexedWidgetBuilder? itemBuilder;
   final int? itemCount;
@@ -37,6 +41,7 @@ class WidgetListView extends StatelessWidget {
     super.key,
     this.controller,
     this.physics,
+    this.shrinkWrap,
     this.children,
     this.itemBuilder,
     this.itemCount,
@@ -53,6 +58,7 @@ class WidgetListView extends StatelessWidget {
     Key? key,
     ScrollController? controller,
     ScrollPhysics? physics,
+    bool? shrinkWrap,
     Color? refreshColor,
     required List<Widget> children,
     Future<void> Function()? onRefresh,
@@ -65,6 +71,7 @@ class WidgetListView extends StatelessWidget {
       key: key,
       controller: controller,
       physics: physics,
+      shrinkWrap: shrinkWrap,
       onRefresh: onRefresh,
       refreshColor: refreshColor,
       refreshType: refreshType,
@@ -79,6 +86,7 @@ class WidgetListView extends StatelessWidget {
     Key? key,
     ScrollController? controller,
     ScrollPhysics? physics,
+    bool? shrinkWrap,
     required IndexedWidgetBuilder itemBuilder,
     required int itemCount,
     Color? refreshColor,
@@ -92,6 +100,7 @@ class WidgetListView extends StatelessWidget {
       key: key,
       controller: controller,
       physics: physics,
+      shrinkWrap: shrinkWrap,
       onRefresh: onRefresh,
       refreshColor: refreshColor,
       itemBuilder: itemBuilder,
@@ -107,6 +116,7 @@ class WidgetListView extends StatelessWidget {
     Key? key,
     ScrollController? controller,
     ScrollPhysics? physics,
+    bool? shrinkWrap,
     required IndexedWidgetBuilder itemBuilder,
     required IndexedWidgetBuilder separatorBuilder,
     required int itemCount,
@@ -121,6 +131,7 @@ class WidgetListView extends StatelessWidget {
       key: key,
       controller: controller,
       physics: physics,
+      shrinkWrap: shrinkWrap,
       onRefresh: onRefresh,
       refreshColor: refreshColor,
       itemBuilder: itemBuilder,
@@ -135,6 +146,8 @@ class WidgetListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fitContent =
+        shrinkWrap ?? (context.findAncestorWidgetOfExactType<Dialog>() != null);
     final ScrollPhysics effectivePhysics =
         physics ?? const BouncingScrollPhysics().applyTo(const AlwaysScrollableScrollPhysics());
     final EdgeInsetsGeometry defPadding = padding ?? defPaddingListView;
@@ -174,6 +187,7 @@ class WidgetListView extends StatelessWidget {
           return ListView.separated(
             controller: controller,
             physics: effectivePhysics,
+            shrinkWrap: fitContent,
             itemCount: finalItemCount,
             padding: defPadding,
             dragStartBehavior: DragStartBehavior.down,
@@ -184,6 +198,7 @@ class WidgetListView extends StatelessWidget {
           return ListView.builder(
             controller: controller,
             physics: effectivePhysics,
+            shrinkWrap: fitContent,
             itemCount: finalItemCount,
             padding: defPadding,
             dragStartBehavior: DragStartBehavior.down,
@@ -205,6 +220,7 @@ class WidgetListView extends StatelessWidget {
         return ListView(
           controller: controller,
           physics: effectivePhysics,
+          shrinkWrap: fitContent,
           padding: defPadding,
           dragStartBehavior: DragStartBehavior.down,
           children: [

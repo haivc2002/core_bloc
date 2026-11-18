@@ -1,6 +1,7 @@
 import 'package:core_bloc/common/color_opacity.dart';
 import 'package:core_bloc/common/context_extension.dart';
 import 'package:core_bloc/overlay/overlay_dialog.dart';
+import 'package:core_bloc/overlay/touch_reactive_surface.dart';
 import 'package:flutter/material.dart';
 
 class OverlayBottom extends StatelessWidget {
@@ -16,22 +17,10 @@ class OverlayBottom extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
-      ),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.light 
-              ? Colors.white 
-              : const Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 10)
-            .add(const EdgeInsetsGeometry.only(bottom: 20)),
-        padding: const EdgeInsets.symmetric(horizontal: 20)
-            .add(const EdgeInsetsGeometry.symmetric(vertical: 15)),
+    final panel = TouchReactiveSurface(
+      borderRadius: BorderRadius.circular(30),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,5 +166,15 @@ class OverlayBottom extends StatelessWidget {
       ),
     );
 
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+      ),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+        child: panel,
+      ),
+    );
   }
 }
